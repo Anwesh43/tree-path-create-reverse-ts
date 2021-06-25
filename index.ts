@@ -40,6 +40,10 @@ class DrawingUtil {
         return Math.min(w, h) / lSizeFactor 
     }
 
+    static getRSize() {
+        return Math.min(w, h) / rSizeFactor 
+    }
+
     static drawTreePathCreateReverse(
         context : CanvasRenderingContext2D,
         x : number,
@@ -215,12 +219,88 @@ class TPNode {
         }
     }
 
-    consumeChildren(cb : Function) {
+    consumeChildren(cb : Function, stopCb : Function) {
         if (this.right) {
             cb(this.right)
         }
         if (this.left) {
             cb(this.left)
+        }
+        if (!this.right && !this.left) {
+            stopCb()
+        }
+    }
+}
+
+class TreePathCreateReverse {
+
+    root : TPNode = new TPNode(w / 2 + DrawingUtil.getRSize(), DrawingUtil.getRSize(), 0, 0)
+    stack : Array<Array<TPNode>> = []
+    queue : Array<TPNode> = []
+    dir : number = 1
+
+    constructor() {
+        this.queue.push(this.root)
+    }
+
+    draw(context : CanvasRenderingContext2D) {
+        this.root.draw(context)
+    }
+
+    update(cb : Function) {
+        if (this.dir == 1) {
+            let n : number = this.queue.length 
+            let k : number = 0
+            for (let i = 0; i < n; i++) {
+                this.queue[i].update(() => {
+                    k++
+                    if (k === n) {
+                        this.removeQueueItems(cb)
+                        
+                    }
+                }, this.dir)
+            }
+        } else {
+            if (this.stack.length > 0) {
+               const nodes : Array<TPNode> = this.stack[this.stack.length - 1]
+               const n : number = nodes.length 
+               let k = 0 
+               for (let i = 0; i < n; i++) {
+                    nodes[i].update(() => {
+                        k++
+                        if (k == n) {
+                            this.flushStack(cb)
+                        }
+                    }, this.dir)
+               }
+            }
+        }
+    }
+
+    removeQueueItems(cb : Function) {
+        let n = this.queue.length 
+        let k = 0 
+        if (n > 0) {
+            const items : Array<TPNode> =  this.queue.splice(0, n)
+            cb()
+            items.forEach((item : TPNode) => {
+                item.consumeChildren((node : TPNode) => {
+                    this.queue.push(node)
+                }, () => {
+                    k++
+                    if (k == n) {
+                        this.dir *= -1
+                    }
+                })
+            })
+            this.stack.push([...items])
+        }
+    }
+
+    flushStack(cb : Function) {
+        if (this.stack.length > 1) {
+            this.stack.splice(this.stack.length - 1, 1)
+            cb()
         }
     }
 }
