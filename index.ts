@@ -36,6 +36,10 @@ class DrawingUtil {
         context.fill()
     }
 
+    static getLSize() {
+        return Math.min(w, h) / lSizeFactor 
+    }
+
     static drawTreePathCreateReverse(
         context : CanvasRenderingContext2D,
         x : number,
@@ -45,7 +49,7 @@ class DrawingUtil {
         scale2 : number, 
         dir : number
     ) {
-        const lSize : number = Math.min(w, h) / lSizeFactor 
+        const lSize : number = DrawingUtil.getLSize()
         const rSize : number = Math.min(w, h) / rSizeFactor 
         const sc11 : number = ScaleUtil.divideScale(scale1, 0, parts)
         const sc12 : number = ScaleUtil.divideScale(scale1, 1, parts)
@@ -158,6 +162,65 @@ class Animator {
         if (this.animated) {
             this.animated = false 
             clearInterval(this.interval)
+        }
+    }
+}
+
+class TPNode {
+
+    right : TPNode 
+    left : TPNode 
+    state1 : State = new State()
+    state2 : State = new State()
+    constructor(private x : number, private y : number, private level : number, private dir : number) {
+        this.addNeighbor()
+    }
+
+    addNeighbor() {
+        if (this.level < levels - 1) {
+            this.right = new TPNode(
+                this.x + DrawingUtil.getLSize(), 
+                this.y + DrawingUtil.getLSize(), 
+                this.level + 1, 
+                1   
+            )    
+            this.left = new TPNode(
+                this.x - DrawingUtil.getLSize(), 
+                this.y + DrawingUtil.getLSize(), 
+                this.level + 1, 
+                -1 
+            )       
+        }
+    }
+
+    draw(context : CanvasRenderingContext2D) {
+        DrawingUtil.drawNode(context, this.x, this.y, this.level, this.state1.scale, this.state2.scale, this.dir)
+    }
+
+    update(cb : Function, dir : number) {
+        if (dir == 1) {
+            this.state1.udpate(cb)
+        }
+        if (dir == -1) {
+            this.state2.udpate(cb)
+        }
+    }
+
+    startUpdating(cb : Function, dir : number) {
+        if (dir == 1) {
+            this.state1.startUpdating(cb)    
+        }
+        if (dir == -1) {
+            this.state2.startUpdating(cb)
+        }
+    }
+
+    consumeChildren(cb : Function) {
+        if (this.right) {
+            cb(this.right)
+        }
+        if (this.left) {
+            cb(this.left)
         }
     }
 }
