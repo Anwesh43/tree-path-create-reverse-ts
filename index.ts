@@ -303,4 +303,48 @@ class TreePathCreateReverse {
             cb()
         }
     }
+
+    startUpdating(cb : Function) {
+        if (this.dir == 1) {
+            this.queue.forEach((node : TPNode, i : number) => {
+                node.startUpdating(() => {
+                    if (i == 0) {
+                        cb()
+                    }
+                }, this.dir)
+            })
+        } else {
+            if (this.stack.length > 0) {
+                this.stack[this.stack.length -  1].forEach((node : TPNode, i : number) => {
+                    node.startUpdating(() => {
+                        if (i == 0) {
+                            cb()
+                        }
+                    }, this.dir)
+                })
+            }
+        }
+    }
+}
+
+class Renderer {
+
+    animator : Animator = new Animator()
+    tpc : TreePathCreateReverse = new TreePathCreateReverse()
+
+    render(context : CanvasRenderingContext2D) {
+        this.tpc.draw(context)
+    }
+
+    handleTap(cb : Function) {
+        this.tpc.startUpdating(() => {
+            this.animator.start(() => {
+                cb()
+                this.tpc.update(() => {
+                    this.animator.stop()
+                    cb()
+                })
+            })
+        })
+    }
 }
