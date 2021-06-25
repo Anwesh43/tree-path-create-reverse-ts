@@ -4,7 +4,7 @@ const parts : number = 2
 const scGap : number = 0.02 / parts  
 const delay : number = 20 
 const backColor : string = "#BDBDBD"
-const color : string = "0091EA"
+const color : string = "#0091EA"
 const levels : number = 4 
 const strokeFactor : number = 90 
 const lSizeFactor : number = 4.9 
@@ -63,8 +63,8 @@ class DrawingUtil {
         const sc2 : number = level === 0 ? scale2 : sc22 
         if (level !== 0 && sc11 >= 0) {
             context.save()
-            context.translate(x - lSize, y - dir * lSize)
-            DrawingUtil.drawLine(context, lSize * sc21, lSize * sc21, lSize * sc11, lSize * dir * sc11)
+            context.translate(x - dir * lSize, y - lSize)
+            DrawingUtil.drawLine(context, lSize * sc21 * dir, lSize * sc21, lSize * dir * sc11, lSize  * sc11)
             context.restore()
         }
         DrawingUtil.drawCircle(context, x, y + (h + rSize - y) * sc2, rSize * sc1)
@@ -83,6 +83,9 @@ class DrawingUtil {
         context.strokeStyle = color 
         context.fillStyle = color 
         context.lineWidth = Math.min(w, h) / strokeFactor 
+        if ((scale1 > 0 && scale1 < 1) || (scale2 > 0 && scale2 < 1)) {
+            console.log("SCALE1_SCALE2", scale1, scale2)
+        }
         DrawingUtil.drawTreePathCreateReverse(
             context, 
             x,
@@ -203,6 +206,12 @@ class TPNode {
 
     draw(context : CanvasRenderingContext2D) {
         DrawingUtil.drawNode(context, this.x, this.y, this.level, this.state1.scale, this.state2.scale, this.dir)
+        if (this.left) {
+            this.left.draw(context)
+        }
+        if (this.right) {
+            this.right.draw(context)
+        }
     }
 
     update(cb : Function, dir : number) {
@@ -252,6 +261,7 @@ class TreePathCreateReverse {
     }
 
     update(cb : Function) {
+        //console.log(this.dir, this.queue, this.stack)
         if (this.dir == 1) {
             let n : number = this.queue.length 
             let k : number = 0
